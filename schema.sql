@@ -19,7 +19,7 @@ CREATE TABLE Role (
 --   * department_id -  INT to hold reference to department role belongs to
   id             INT           NOT NULL AUTO_INCREMENT,
   title          VARCHAR(30)   NOT NULL,
-  salary         DECIMAL(10,4) NOT NULL,
+  salary         DECIMAL(10,2) NOT NULL,
   department_id  INT           NOT NULL,
   PRIMARY KEY (id),
   FOREIGN KEY (department_id) REFERENCES Department(id)
@@ -41,6 +41,3 @@ CREATE TABLE Employee (
   FOREIGN KEY (role_id)    REFERENCES Role(id),
   CONSTRAINT  FK_ManagerEmployee FOREIGN KEY (manager_id) REFERENCES Employee(id)
 );
-
-
-
