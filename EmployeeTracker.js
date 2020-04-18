@@ -35,34 +35,6 @@ const question = [
   }
 ];
 
-const questionADD_Role = [
-  // Insertion Questions:
-  {
-    type:    "input",
-    name:    "newTitle",
-    message: "Insert new Role Title: "
-  },
-  {
-    type:    "input",
-    name:    "newSalary",
-    message: "Insert new Role Salary: "
-  }
-];
-
-const questionADD_Employee = [
-  // Insertion Questions:
-  {
-    type:    "input",
-    name:    "newFirstName",
-    message: "Insert new Employee First Name: "
-  },
-  {
-    type:    "input",
-    name:    "newLastName",
-    message: "Insert new Employee Last Name: "
-  }
-];
-
 function welcome() {
   inquirer.prompt(
     [
@@ -92,7 +64,7 @@ function welcome() {
 }
 
 function closeConnection(){
-  console.log("[WARNING] Closing connection with database..");
+  console.log("\n[WARNING] Closing connection with database..\n");
   db.end();
 }
 
@@ -115,7 +87,9 @@ function init() {
       case 6:
         updateFunctions(parseInt(question[0].choices.indexOf(response.option)));
         break;
-/*       
+/*   
+      // Bonus:
+
       case 7: // option = Delete Departments
         ();
         break;
@@ -176,7 +150,7 @@ function viewFunctions(optionFunc) {
       break;
   
     default:
-      console.log("[WARNING] Function not found!");
+      console.log("\n[WARNING] Function not found!\n");
       break;
   }
 }
@@ -184,6 +158,35 @@ function viewFunctions(optionFunc) {
 // ADD
 function addFunctions(optionFunc) {
   const add = new Add();
+
+  let questionADD_Role = [
+    // Insertion Questions:
+    {
+      type:    "input",
+      name:    "newTitle",
+      message: "Insert new Role Title: "
+    },
+    {
+      type:    "input",
+      name:    "newSalary",
+      message: "Insert new Role Salary: "
+    }
+  ];
+  
+  let questionADD_Employee = [
+    // Insertion Questions:
+    {
+      type:    "input",
+      name:    "newFirstName",
+      message: "Insert new Employee First Name: "
+    },
+    {
+      type:    "input",
+      name:    "newLastName",
+      message: "Insert new Employee Last Name: "
+    }
+  ];
+
   switch (optionFunc) {
     case 3: // option = Add new Department
       inquirer.prompt(
@@ -198,7 +201,7 @@ function addFunctions(optionFunc) {
         const newDepartment = [[response.newDepartment]];
         db.query(add.queryAddDepartment(), [newDepartment], function(err, res) {
           if (err) {
-            console.log('Insertion failed: ' + err.stack);
+            console.log("\nInsertion failed: " + err.stack + "\n");
             throw err;
           } 
 
@@ -211,52 +214,43 @@ function addFunctions(optionFunc) {
       break;
 
     case 4: // option = Add new Role
-      verifyDepartments(add); 
+      verifyDepartments(add, true, questionADD_Role); // The boolean variable will indicate if it is an addition function
       break;
  
     case 5: // option = Add new Employee
-      verifyRoles(add);
+      verifyRoles(add, true, questionADD_Employee); // The boolean variable will indicate if it is an addition function
       break;
   
     default:
-      console.log("[WARNING] Function not found!");
+      console.log("\n[WARNING] Function not found!\n");
       break;
   }
 }
 
 // UPDATE
 function updateFunctions(optionFunc) {
-  const update = new Update();
+  const update            = new Update();
+  let questionUP_Employee = [];
+
   switch (optionFunc) {
     case 6: // option = Update Employee Role
-      // UPDATING information about Employee's Role
-      db.query(view.queryUpdateEmployeeRole(), function(err, res) {
-        if (err) {
-          console.log('Update information failed: ' + err.stack);
-          throw err;
-        } 
-
-        if (res.affectedRows > 0)
-          console.log("\n[*] NEW Role updated successfully!\n");
-
-        init();
-      });
+      verifyRoles(update, false, questionUP_Employee); // The boolean variable will indicate if it is an addition function
       break;
   
     default:
-      console.log("[WARNING] Function not found!");
+      console.log("\n[WARNING] Function not found!\n");
       break;
   }
 }
 
 // Specific Functions:
-
-function verifyDepartments(add) {
+function verifyDepartments(typeFunc, addFunc, questionADD_Role) {
   const view = new View();
+
   // GETTING all departments
   db.query(view.queryAllDepartments(), function(err, res) {
     if ((err) || (res.length <= 0)) {
-      console.log(`WARNING: You MUST add a Department first.`);
+      console.log("\n[WARNING] You MUST add a Department first!\n");
       init();
     }
     else {
@@ -265,31 +259,105 @@ function verifyDepartments(add) {
         depNames.push({ id: element.id, name: element.name});
       });
 
-      // Put ALL repositories as options to the user
-      questionADD_Role.push( 
-        {
-          type:    "list",
-          name:    "deplist",
-          message: 'Please, choose 1 (one) Department to this Role:',
-          choices: depNames.map(key => key.name)
-        }
-      );
+      // Verify if it is an addition function AND Put ALL departments as options to the user
+      if (addFunc) {
+        questionADD_Role.push( 
+          {
+            type:    "list",
+            name:    "deplist",
+            message: 'Please, choose 1 (one) Department to this Role:',
+            choices: depNames.map(key => key.name)
+          }
+        );
 
-      addNewRole(add, depNames.map(key => key.id));
+        setRole(typeFunc, addFunc, questionADD_Role, depNames.map(key => key.id));
+      }
     }
   });
 }
 
-function addNewRole (add, depID) {
+function verifyRoles(typeFunc, addFunc, questionArray) {
+  const view = new View();
+
+  // GETTING all roles
+  db.query(view.queryAllRolesShort(), function(err, res) {
+    if ((err) || (res.length <= 0)) {
+      console.log("\n[WARNING] You MUST add a Role first!\n");
+      init();
+    }
+    else {
+      let roleTitles = [];
+      res.forEach(element => {
+        roleTitles.push({ id: element.id, title: element.title});
+      });
+
+      // Put ALL roles as options to the user
+      questionArray.push( 
+        {
+          type:    "list",
+          name:    "rolelist",
+          message: 'Please, select 1 (one) Role Title to your employee:',
+          choices: roleTitles.map(key => key.title)
+        }
+      );
+
+      verifyEmployees(typeFunc, addFunc, questionArray, roleTitles.map(key => key.id));
+    }
+  });
+}
+
+function verifyEmployees (typeFunc, addFunc, questionArray, rolesID) {
+  const view = new View();
+  let strMsg = "";
+
+  // GETTING all employees
+  db.query(view.queryAllEmpShort(), function(err, res) {
+    if (err) {
+      console.log("\n[ERROR] Service unavailable. Try it later.\n");
+      init();
+    }
+    else {
+      let empNames = [];
+      res.forEach(element => {
+        empNames.push({ id: element.id, name: element.employee_name});
+      });
+
+      if (addFunc) {
+        // Addition Function
+        empNames.push({ id: 0, name: "NONE"});
+        strMsg = "Please, select 1 (one) or None Manager to your employee:";
+      }
+      else {
+        // Other Function (in this case: Update Function)
+        strMsg = "Please, select 1 (one) employee:";
+      }
+      
+
+      // Put ALL employees as options to the user
+      questionArray.push( 
+        {
+          type:    "list",
+          name:    "emplist",
+          message: strMsg,
+          choices: empNames.map(key => key.name)
+        }
+      );
+
+      setEmployee(typeFunc, addFunc, questionArray, rolesID, empNames.map(key => key.id));
+    }
+  }); 
+}
+
+function setRole (typeFunc, addFunc, questionADD_Role, depID) {
   inquirer.prompt(questionADD_Role).then((response) => {
     // ADDING NEW ROLE
     const newTitle  = [[ response.newTitle ]]; 
     const newSalary = [[ parseInt(response.newSalary) ]];
     const newDepID  = [[ depID[questionADD_Role[questionADD_Role.length - 1].choices.indexOf(response.deplist)] ]];
 
-    db.query(add.queryAddNewRole(), [newTitle, newSalary, newDepID], function(err, res) {
+    db.query(typeFunc.queryAddNewRole(), [newTitle, newSalary, newDepID], function(err, res) {
       if (err) {
-        console.log('Insertion failed: ' + err.stack);
+        console.log("\nInsertion failed: " + err.stack + "\n");
         throw err;
       }
 
@@ -301,87 +369,43 @@ function addNewRole (add, depID) {
   });
 }
 
-function verifyRoles(add) {
-  const view = new View();
-  // GETTING all roles
-  db.query(view.queryAllRolesShort(), function(err, res) {
-    if ((err) || (res.length <= 0)) {
-      console.log(`WARNING: You MUST add a Role first.`);
-      init();
+function setEmployee (typeFunc, addFunc, questionArray, rolesID, empsID) {
+  inquirer.prompt(questionArray).then((response) => {
+    if (addFunc) {
+      // ADDING NEW EMPLOYEE
+      const newFirstName = [[ response.newFirstName ]]; 
+      const newLastName  = [[ response.newLastName  ]];
+      const newRoleID    = [[ rolesID[questionArray[questionArray.length - 2].choices.indexOf(response.rolelist)] ]];
+      const newManagerID = [[ empsID [questionArray[questionArray.length - 1].choices.indexOf(response.emplist)]  ]];
+
+      db.query(typeFunc.queryAddNewEmployee(newManagerID), (parseInt(newManagerID) === 0) ? [newFirstName, newLastName, newRoleID] : [newFirstName, newLastName, newRoleID, newManagerID], function(err, res) {
+        verifyResponseQuery(addFunc, err, res);
+      });
     }
     else {
-      let roleTitles = [];
-      res.forEach(element => {
-        roleTitles.push({ id: element.id, title: element.title});
+      // UPDATING ROLE EMPLOYEE
+      const newRoleID     = [[ rolesID[questionArray[questionArray.length - 2].choices.indexOf(response.rolelist)] ]];
+      const newEmployeeID = [[ empsID [questionArray[questionArray.length - 1].choices.indexOf(response.emplist)]  ]];
+
+      db.query(typeFunc.queryUpdateEmployeeRole(), [newRoleID, newEmployeeID], function(err, res) {
+        verifyResponseQuery(addFunc, err, res);
       });
-
-      // Put ALL repositories as options to the user
-      questionADD_Employee.push( 
-        {
-          type:    "list",
-          name:    "rolelist",
-          message: 'Please, choose 1 (one) Role Title to your employee:',
-          choices: roleTitles.map(key => key.title)
-        }
-      );
-
-      verifyEmployees(add, roleTitles.map(key => key.id))
     }
   });
 }
 
-function verifyEmployees (add, rolesID) {
-  const view = new View();
-  // GETTING all employees
-  db.query(view.queryAllEmpShort(), function(err, res) {
-    if ((err) || (res.length <= 0)) {
-      console.log(`WARNING: You MUST add a Role first.`);
-      init();
-    }
-    else {
-      let empNames = [];
-      res.forEach(element => {
-        empNames.push({ id: element.id, name: element.employee_name});
-      });
-      empNames.push({ id: 0, name: "NONE"});
+function verifyResponseQuery(addFunc, err, res) {
+  if (err) {
+    console.log("\n" + ((addFunc) ? "Insertion" : "Update information") + " failed: " + err.stack + "\n");
+    throw err;
+  }
 
-      // Put ALL repositories as options to the user
-      questionADD_Employee.push( 
-        {
-          type:    "list",
-          name:    "emplist",
-          message: 'Please, choose 1 (one) or None Manager to your employee:',
-          choices: empNames.map(key => key.name)
-        }
-      );
-
-      addNewEmployee(add, rolesID, empNames.map(key => key.id))
-    }
-  }); 
+  if (res.affectedRows > 0)
+    console.log("\n[*] NEW Employee " + ((addFunc) ? "added" : "Role updated") + " successfully!\n");
+    
+  init();
 }
 
-function addNewEmployee (add, rolesID, empsID) {
-  inquirer.prompt(questionADD_Employee).then((response) => {
-    // ADDING NEW EMPLOYEE
-    const newFirstName = [[ response.newFirstName ]]; 
-    const newLastName  = [[ response.newLastName  ]];
-    const newRoleID    = [[ rolesID[questionADD_Employee[questionADD_Employee.length - 2].choices.indexOf(response.rolelist)] ]];
-    const newManagerID = [[ empsID [questionADD_Employee[questionADD_Employee.length - 1].choices.indexOf(response.emplist)]  ]];
-
-
-    db.query(add.queryAddNewEmployee(newManagerID), (parseInt(newManagerID) === 0) ? [newFirstName, newLastName, newRoleID] : [newFirstName, newLastName, newRoleID, newManagerID], function(err, res) {
-      if (err) {
-        console.log('Insertion failed: ' + err.stack);
-        throw err;
-      }
-
-      if (res.affectedRows > 0)
-        console.log("\n[*] NEW Employee added successfully!\n");
-        
-      init();
-    });
-  });
-}
-
+// Main function that starts the application
 welcome();
 
