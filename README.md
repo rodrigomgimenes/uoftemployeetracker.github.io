@@ -6,7 +6,7 @@
   * ['employee-tracker'](https://github.com/rodrigomgimenes/uoftemployeetracker.github.io/)
 
   ## Description:
-  Homework 10 - Template Engine - Employee Tracker
+  Homework 12 - MySQL - Employee Tracker
 
 
   ## Instructions:
